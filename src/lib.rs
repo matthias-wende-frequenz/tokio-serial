@@ -207,11 +207,20 @@ impl Write for Serial {
 }
 
 #[cfg(unix)]
-use std::os::unix::io::{AsRawFd, RawFd};
+use std::os::unix::io::{AsRawFd, FromRawFd, RawFd};
 #[cfg(unix)]
 impl AsRawFd for Serial {
     fn as_raw_fd(&self) -> RawFd {
         self.io.get_ref().as_raw_fd()
+    }
+}
+
+#[cfg(unix)]
+impl FromRawFd for Serial {
+    unsafe fn from_raw_fd(fd: RawFd) -> Serial {
+        let port = mio_serial::Serial::from_raw_fd(fd);
+        let io = PollEvented::new(port).expect("Unable to create PollEvented for raw serial fd");
+        Serial{io}
     }
 }
 
